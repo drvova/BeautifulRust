@@ -6,6 +6,11 @@ All notable changes to this project are listed here. Versions follow
 
 ## [Unreleased]
 
+### Fixed
+
+- Use indexing (`v[i]`) versus `get` as the panicking/fallible API example in
+  `rust-best-practices`; out-of-bounds `get_unchecked` causes undefined behavior.
+
 ## [1.4.0] - 2026-10-26
 
 The first release with outside contributions. Thanks to @mvanhorn for both.
