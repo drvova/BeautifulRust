@@ -6,6 +6,32 @@ All notable changes to this project are listed here. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- **Bevy support.** `skills/rust-best-practices/references/bevy.md` covers Bevy 0.20.
+  It says which general rules don't apply to systems: by-value system parameters, the
+  Bevy prelude, public fields on plain-data components, and complex query types. It
+  lists the ECS bugs that compile cleanly: conflicting queries (B0001), deferred
+  `Commands`, systems with no order between them, and unwrapped `single()`. It also
+  gives the four lint allows a Bevy crate needs on top of `lints/lints.toml`. Every
+  behavior it describes was confirmed with a test on bevy 0.20.0. Both the writing and
+  review skills read it when a crate depends on `bevy`. Proposed by @millionart in #5.
+- **Two Bevy eval cases.** `rust-review/evals/review-bevy-arena` plants a query conflict
+  and an ordering bug in a combat plugin whose tests pass, alongside valid Bevy patterns
+  the review should leave alone. `rust-best-practices/evals/bevy-arena-regen` adds a
+  feature to the fixed plugin and checks that Bevy's conventions survive. Both pin
+  `bevy = "=0.20.0"` and ship a `Cargo.lock`.
+- **A cross-agent benchmark.** `benchmarks/cross-agent-2026-10/` ran all eight eval cases
+  on Claude Code and Codex CLI, with and without the skills, and graded them blind. The
+  skills raised Codex from 53/85 to 76/85 and Claude from 72/85 to 80/85. The page
+  includes every assertion result, the harness, and the caveats, including one case
+  where the skills made Claude worse.
+
+### Changed
+
+- The glob-import rule in both skills allows a framework's documented prelude, such as
+  `use bevy::prelude::*`. Clippy's `wildcard_imports` already exempts these.
+
 ## [1.4.0] - 2026-10-26
 
 The first release with outside contributions. Thanks to @mvanhorn for both.
