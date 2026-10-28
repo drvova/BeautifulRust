@@ -32,6 +32,13 @@ All notable changes to this project are listed here. Versions follow
 - The glob-import rule in both skills allows a framework's documented prelude, such as
   `use bevy::prelude::*`. Clippy's `wildcard_imports` already exempts these.
 
+### Fixed
+
+- The Errors section paired `get` with `get_unchecked` as a fallible API and its
+  panicking twin, but an out-of-bounds `get_unchecked` is undefined behavior, not a
+  panic. It now pairs indexing (`v[i]`, which panics) with `v.get(i)`. Reported and
+  fixed by @DylanCosto in #3 and #6.
+
 ## [1.4.0] - 2026-10-26
 
 The first release with outside contributions. Thanks to @mvanhorn for both.
