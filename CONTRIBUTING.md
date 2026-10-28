@@ -41,7 +41,8 @@ disagree, say which one you followed and why.
 
    These are real model runs and are billed, so a maintainer can run them for you if
    you'd rather not. Say in the pull request whether you ran them.
-5. **Validate the plugin** with `claude plugin validate .` from the repo root.
+5. **Validate the skills and manifest** with `python3 scripts/check-skill.py` from the
+   repo root.
 6. **Add a line to the Unreleased section of [CHANGELOG.md](CHANGELOG.md).**
 
 ## Style

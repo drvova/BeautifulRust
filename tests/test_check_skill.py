@@ -68,22 +68,11 @@ VALID_CHANGELOG = """\
 [1.0.0]: https://github.com/example/demo/releases/tag/v1.0.0
 """
 
-VALID_PLUGIN = """\
+VALID_PACKAGE = """\
 {
   "name": "demo",
-  "version": "1.0.0"
-}
-"""
-
-VALID_MARKETPLACE = """\
-{
-  "name": "demo",
-  "plugins": [
-    {
-      "name": "demo",
-      "source": "./"
-    }
-  ]
+  "version": "1.0.0",
+  "omp": {}
 }
 """
 
@@ -120,8 +109,7 @@ def build_valid_repo(root):
     write(root / "README.md", VALID_README)
     write(root / "LICENSE", "MIT\n")
     write(root / "CHANGELOG.md", VALID_CHANGELOG)
-    write(root / ".claude-plugin" / "plugin.json", VALID_PLUGIN)
-    write(root / ".claude-plugin" / "marketplace.json", VALID_MARKETPLACE)
+    write(root / "package.json", VALID_PACKAGE)
     skill = root / "skills" / "demo-skill"
     write(skill / "SKILL.md", VALID_SKILL)
     write(skill / "references" / "guide.md", VALID_GUIDE)
@@ -315,28 +303,28 @@ class CheckSkillTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = build_valid_repo(tmp)
             write(
-                root / ".claude-plugin" / "plugin.json",
-                '{\n  "name": "demo",\n  "version": "9.9.9"\n}\n',
+                root / "package.json",
+                '{\n  "name": "demo",\n  "version": "9.9.9",\n  "omp": {}\n}\n',
             )
             problems = self.run_root(root)
             self.assert_has_error(problems, "9.9.9")
 
-    def test_plugin_name_mismatch(self):
+    def test_missing_omp_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = build_valid_repo(tmp)
             write(
-                root / ".claude-plugin" / "marketplace.json",
-                '{\n  "name": "other",\n  "plugins": [{"name": "other", "source": "./"}]\n}\n',
+                root / "package.json",
+                '{\n  "name": "demo",\n  "version": "1.0.0"\n}\n',
             )
             problems = self.run_root(root)
-            self.assert_has_error(problems, "name")
+            self.assert_has_error(problems, "omp manifest")
 
     def test_invalid_semver(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = build_valid_repo(tmp)
             write(
-                root / ".claude-plugin" / "plugin.json",
-                '{\n  "name": "demo",\n  "version": "1.0"\n}\n',
+                root / "package.json",
+                '{\n  "name": "demo",\n  "version": "1.0",\n  "omp": {}\n}\n',
             )
             problems = self.run_root(root)
             self.assert_has_error(problems, "semver")

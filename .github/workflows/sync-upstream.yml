@@ -1,0 +1,39 @@
+# Keeps this fork current with morganlinton/BeautifulRust: skills, references, evals, and
+# lints flow in, while upstream's Claude Code plugin files are dropped and this fork's omp
+# packaging is kept. See scripts/sync-upstream.sh for the rules.
+#
+# Nothing is pushed unless the merged tree passes scripts/check-skill.py and its tests.
+
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "41 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge upstream
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/sync-upstream.sh
+      - name: Check skill
+        run: python3 scripts/check-skill.py
+      - name: Test the checker
+        run: python3 -m unittest discover -s tests
+      - name: Push
+        run: git push origin HEAD:main
