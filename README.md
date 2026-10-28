@@ -311,7 +311,9 @@ BeautifulRust/
 │   └── check/                 one deliberate violation per lint
 ├── scripts/
 │   ├── check-skill.py         validates skills, evals, and manifests
-│   └── check-lints.sh         proves every lint in the table fires
+│   ├── check-lints.sh         proves every lint in the table fires
+│   ├── check-examples.py      compiles every Rust example in the docs
+│   └── examples.json          context that lets fragment examples compile
 ├── benchmarks/
 │   └── cross-agent-2026-10/   Claude Code vs Codex, with and without the skills
 ├── examples/
@@ -369,10 +371,12 @@ each release in [CHANGELOG.md](CHANGELOG.md).
 
 Validate before pushing. `python3 scripts/check-skill.py` checks skill
 frontmatter, links, eval cases, and plugin manifests. Pass `--json` for
-machine-readable output.
+machine-readable output. `python3 scripts/check-examples.py` compiles every Rust
+block in the skills, reference digests, README, and examples with `cargo check`.
 
 ```bash
 python3 scripts/check-skill.py
+python3 scripts/check-examples.py
 claude plugin validate .
 ```
 
