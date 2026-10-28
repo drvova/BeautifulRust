@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check skill frontmatter, links, eval cases, and plugin manifests.
+"""Check skill frontmatter, links, eval cases, and the omp package manifest.
 
 Stdlib only, Python 3.9+. Exit 1 on any error. Warnings do not fail.
 """
@@ -415,11 +415,10 @@ class Checker:
         )
 
     def check(self) -> List[Problem]:
-        plugin = self.root / ".claude-plugin" / "plugin.json"
-        market = self.root / ".claude-plugin" / "marketplace.json"
+        package = self.root / "package.json"
         changelog = self.root / "CHANGELOG.md"
         readme = self.root / "README.md"
-        version = self._check_plugin_files(plugin, market)
+        version = self._check_package(package)
         if version:
             self._check_changelog(changelog, version)
         skills = self._skill_dirs()
@@ -489,52 +488,31 @@ class Checker:
     ) -> int:
         return locs.get(keys, default)
 
-    def _check_plugin_files(self, plugin_path: Path, market_path: Path) -> Optional[str]:
-        plugin = self._load_json(plugin_path)
-        market = self._load_json(market_path)
-        version = None
-        plugin_name = None
-        if isinstance(plugin, dict):
-            plugin_name = plugin.get("name")
-            if not isinstance(plugin_name, str) or not plugin_name.strip():
-                self.add(plugin_path, 1, "missing name")
-                plugin_name = None
-            version = plugin.get("version")
-            if not isinstance(version, str) or not version.strip():
-                self.add(plugin_path, 1, "missing version")
-                version = None
-            elif not SEMVER_RE.match(version):
-                self.add(
-                    plugin_path,
-                    _json_key_line(plugin_path, "version"),
-                    "version %r is not semver" % version,
-                )
-        if isinstance(market, dict) and plugin_name:
-            market_name = market.get("name")
-            if market_name != plugin_name:
-                self.add(
-                    market_path,
-                    _json_key_line(market_path, "name"),
-                    "plugin name %r does not match %r in plugin.json"
-                    % (market_name, plugin_name),
-                )
-            plugins = market.get("plugins")
-            if not isinstance(plugins, list) or not plugins:
-                self.add(market_path, 1, "missing plugins list")
-            else:
-                for i, entry in enumerate(plugins):
-                    if not isinstance(entry, dict):
-                        self.add(market_path, 1, "plugins[%d] must be a mapping" % i)
-                        continue
-                    entry_name = entry.get("name")
-                    if entry_name != plugin_name:
-                        self.add(
-                            market_path,
-                            1,
-                            "plugin name %r does not match %r in plugin.json"
-                            % (entry_name, plugin_name),
-                        )
-        return version if isinstance(version, str) else None
+    def _check_package(self, path: Path) -> Optional[str]:
+        package = self._load_json(path)
+        if not isinstance(package, dict):
+            if package is not None:
+                self.add(path, 1, "package.json must be a mapping")
+            return None
+        name = package.get("name")
+        if not isinstance(name, str) or not name.strip():
+            self.add(path, 1, "missing name")
+        version = package.get("version")
+        if not isinstance(version, str) or not version.strip():
+            self.add(path, 1, "missing version")
+            version = None
+        elif not SEMVER_RE.match(version):
+            self.add(
+                path,
+                _json_key_line(path, "version"),
+                "version %r is not semver" % version,
+            )
+        # omp skips packages without an `omp` (or legacy `pi`) manifest, so the
+        # skills under skills/ would never load.
+        manifest = package.get("omp", package.get("pi"))
+        if not isinstance(manifest, dict):
+            self.add(path, 1, "missing omp manifest: add an \"omp\": {} object")
+        return version
 
     def _load_json(self, path: Path) -> Any:
         text = self._read(path)

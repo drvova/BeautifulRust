@@ -1,23 +1,29 @@
 {
   "name": "beautiful-rust",
   "version": "1.4.0",
+  "private": true,
   "description": "Write, review, port, and enforce idiomatic Rust: three skills distilled from the Google Rust Style Guide, the Rust API Guidelines, Effective Rust, Rust Design Patterns, and Microsoft's Pragmatic Rust Guidelines, plus a drop-in clippy config.",
   "license": "MIT",
   "author": {
     "name": "Morgan Linton",
     "url": "https://github.com/morganlinton"
   },
-  "homepage": "https://github.com/morganlinton/BeautifulRust",
-  "repository": "https://github.com/morganlinton/BeautifulRust",
+  "homepage": "https://github.com/drvova/BeautifulRust",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drvova/BeautifulRust.git"
+  },
   "keywords": [
     "api-design",
     "best-practices",
     "clippy",
     "code-review",
     "migration",
+    "omp",
     "porting",
     "rust",
     "skill",
     "style-guide"
-  ]
+  ],
+  "omp": {}
 }

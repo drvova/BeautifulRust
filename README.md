@@ -114,25 +114,27 @@ npx skills add morganlinton/BeautifulRust
 Add `-g` to install for your user instead of the current project, or `-a <agent>` to pick
 an agent, such as `-a codex` or `-a cursor`.
 
-### Claude Code
+### oh-my-pi (omp)
 
-Install it as a plugin so updates arrive with one command:
+This fork ships as an omp plugin. `package.json` carries the `omp` manifest, and omp
+discovers the three skills from `skills/` on its own:
 
 ```bash
-claude plugin install beautiful-rust --marketplace morganlinton/BeautifulRust
+omp plugin install github:drvova/BeautifulRust
 ```
 
-Inside a session, the same thing is:
+Pick up new versions with:
 
-```
-/plugin marketplace add morganlinton/BeautifulRust
-/plugin install beautiful-rust@beautiful-rust
+```bash
+omp plugin upgrade beautiful-rust
 ```
 
-This installs all three skills. They appear as `/beautiful-rust:rust-best-practices`,
-`/beautiful-rust:rust-review`, and `/beautiful-rust:rust-port`, though you rarely need to
-call them, since they trigger on their own. To try it for one session without installing, clone the repo
-and run `claude --plugin-dir ./BeautifulRust`.
+Run `/reload-plugins` in an open session after installing or upgrading. To work on the
+skills locally, clone the repo and link it, so edits take effect without reinstalling:
+
+```bash
+omp plugin link ./BeautifulRust
+```
 
 ### GitHub Copilot
 
@@ -174,7 +176,7 @@ cp -R BeautifulRust/skills/rust-* ~/.agents/skills/
 | Cursor | `~/.cursor/skills/` or `~/.agents/skills/` | `.cursor/skills/` or `.agents/skills/` |
 | Gemini CLI | `~/.gemini/skills/` or `~/.agents/skills/` | `.gemini/skills/` or `.agents/skills/` |
 
-Claude Code does not read `.agents/skills/`, so use its own directory or the plugin.
+Claude Code does not read `.agents/skills/`, so use its own directory.
 Restart the agent if the skill doesn't show up right away.
 
 ### claude.ai
@@ -291,9 +293,7 @@ it while coding:
 
 ```
 BeautifulRust/
-├── .claude-plugin/
-│   ├── plugin.json         plugin manifest
-│   └── marketplace.json    lets this repo act as its own marketplace
+├── package.json               omp plugin manifest
 ├── skills/
 │   ├── rust-best-practices/   writing skill
 │   │   ├── SKILL.md
@@ -310,7 +310,7 @@ BeautifulRust/
 │   ├── clippy.toml            clippy thresholds
 │   └── check/                 one deliberate violation per lint
 ├── scripts/
-│   ├── check-skill.py         validates skills, evals, and manifests
+│   ├── check-skill.py         validates skills, evals, and the manifest
 │   └── check-lints.sh         proves every lint in the table fires
 ├── benchmarks/
 │   └── cross-agent-2026-10/   Claude Code vs Codex, with and without the skills
@@ -357,24 +357,40 @@ Claude model.
 
 ## Updating
 
-Edit the skill, bump `version` in `.claude-plugin/plugin.json`, commit, and push.
-Claude Code plugin users pick up the new version with:
+Edit the skill, bump `version` in `package.json`, commit, and push. omp users pick up
+the new version with:
 
 ```bash
-claude plugin update beautiful-rust
+omp plugin upgrade beautiful-rust
 ```
 
 Anyone who copied the folder or used an installer re-runs the install command. Record
 each release in [CHANGELOG.md](CHANGELOG.md).
 
 Validate before pushing. `python3 scripts/check-skill.py` checks skill
-frontmatter, links, eval cases, and plugin manifests. Pass `--json` for
-machine-readable output.
+frontmatter, links, eval cases, and the omp manifest in `package.json`. Pass `--json`
+for machine-readable output.
 
 ```bash
 python3 scripts/check-skill.py
-claude plugin validate .
 ```
+
+### Syncing with upstream
+
+This repo is a fork of [morganlinton/BeautifulRust](https://github.com/morganlinton/BeautifulRust).
+The [Sync upstream](.github/workflows/sync-upstream.yml) workflow merges upstream's
+`main` once a day (or on demand from the Actions tab) so skill, reference, eval, and lint
+updates keep arriving. It keeps the fork omp-native:
+
+- Upstream's Claude Code plugin files (`.claude-plugin/`) are dropped from every merge.
+- When upstream bumps the version in `.claude-plugin/plugin.json`, the same version is
+  written to `package.json`.
+- Where upstream and this fork changed the same lines, the fork's side wins, so the
+  omp install docs and manifest checks survive.
+
+The workflow runs `scripts/check-skill.py` and its tests before pushing. If they fail,
+or a conflict needs a person, it pushes nothing and the run fails, so you can merge by
+hand.
 
 ## Contributing
 

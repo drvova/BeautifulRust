@@ -2,7 +2,7 @@
 
 All notable changes to this project are listed here. Versions follow
 [Semantic Versioning](https://semver.org/), and the version lives in
-`.claude-plugin/plugin.json`.
+`package.json`.
 
 ## [Unreleased]
 
