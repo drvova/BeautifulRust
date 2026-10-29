@@ -26,6 +26,11 @@ All notable changes to this project are listed here. Versions follow
   skills raised Codex from 53/85 to 76/85 and Claude from 72/85 to 80/85. The page
   includes every assertion result, the harness, and the caveats, including one case
   where the skills made Claude worse.
+- **Every Rust example is compiled.** `scripts/check-examples.py` compiles each Rust
+  code block in the skills, the reference digests, the README, and `examples/` with
+  `cargo check`, and reports errors at the markdown line. `scripts/examples.json` holds
+  the surrounding code that fragments need to compile, or the reason a block is
+  skipped. CI runs it on every push and pull request. Contributed by @tmchow in #4.
 
 ### Changed
 
