@@ -6,6 +6,12 @@ All notable changes to this project are listed here. Versions follow
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-30
+
+Bevy support, a Claude Code vs Codex benchmark, and every Rust example compiled in CI.
+Thanks to @tmchow and @DylanCosto for their pull requests, and to @millionart for
+proposing Bevy support.
+
 ### Added
 
 - **Bevy support.** `skills/rust-best-practices/references/bevy.md` covers Bevy 0.20.
@@ -37,6 +43,7 @@ All notable changes to this project are listed here. Versions follow
   `clippy::exhaustive_enums` (`[lib]`) flags an exported enum without
   `#[non_exhaustive]`, the lint the same guide names for that rule; binary crates
   export nothing, so it never fires there. `lints/check/` proves both fire.
+  Contributed by @tmchow in #8.
 
 ### Changed
 
@@ -47,6 +54,7 @@ All notable changes to this project are listed here. Versions follow
   return types". Application code takes `String` or `&str` rather than
   `impl Into<String>`, and library code returns an iterator instead of collecting into
   a `Vec`. `rust-review` flags both, with Google's exceptions for owned results.
+  Contributed by @tmchow in #9.
 
 ### Fixed
 
@@ -156,7 +164,8 @@ First release.
 - Packaged as a Claude Code plugin that is its own marketplace.
 - MIT license, source attribution, and a plugin icon.
 
-[Unreleased]: https://github.com/morganlinton/BeautifulRust/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/morganlinton/BeautifulRust/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/morganlinton/BeautifulRust/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/morganlinton/BeautifulRust/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/morganlinton/BeautifulRust/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/morganlinton/BeautifulRust/compare/v1.1.0...v1.2.0
