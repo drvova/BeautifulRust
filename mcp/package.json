@@ -1,0 +1,29 @@
+{
+  "name": "beautiful-rust-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remote MCP server for Beautiful Rust: rule search, lint explanations, and crate versions.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "data": "python3 ../scripts/build-mcp-data.py",
+    "bundle": "node scripts/bundle.mjs",
+    "build": "npm run data && npm run bundle",
+    "dev": "npm run build && npx --yes vercel@65.2.0 dev",
+    "deploy": "npx --yes vercel@65.2.0 build --prod --yes && npx --yes vercel@65.2.0 deploy --prebuilt --prod",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test 'test/*.test.ts'"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

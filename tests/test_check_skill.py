@@ -104,6 +104,92 @@ The crate builds and the tests pass.
 """
 
 
+VALID_PORTABLE = {
+    "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+    "name": "demo",
+    "version": "1.0.0",
+    "extensions": {
+        "com.openai": {
+            "interface": {
+                "displayName": "Demo",
+                "shortDescription": "A demo plugin",
+                "longDescription": "Skills used as a fixture.",
+                "developerName": "Example",
+                "category": "Developer Tools",
+                "capabilities": ["Check notes"],
+                "websiteURL": "https://example.com",
+                "supportURL": "https://example.com/support",
+                "privacyPolicyURL": "https://example.com/privacy",
+                "termsOfServiceURL": "https://example.com/terms",
+                "defaultPrompt": ["Check my notes"],
+                "composerIcon": "./assets/icon.png",
+                "logo": "./assets/icon.png",
+            }
+        }
+    },
+}
+
+
+def png_header(width, height):
+    """The first 24 bytes of a PNG, which is all the checker reads."""
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + b"\x00\x00\x00\x0dIHDR"
+        + width.to_bytes(4, "big")
+        + height.to_bytes(4, "big")
+    )
+
+
+def add_portable_plugin(root, manifest=None, icon=(64, 64)):
+    root = Path(root)
+    write(root / "plugin.json", json.dumps(manifest or VALID_PORTABLE, indent=2))
+    icon_path = root / "assets" / "icon.png"
+    icon_path.parent.mkdir(parents=True, exist_ok=True)
+    icon_path.write_bytes(png_header(*icon))
+    return root
+
+
+def portable_with(**interface):
+    manifest = json.loads(json.dumps(VALID_PORTABLE))
+    manifest["extensions"]["com.openai"]["interface"].update(interface)
+    return manifest
+
+
+VALID_MCP = {
+    "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+    "mcpServers": {"demo": {"type": "streamable-http", "url": "https://example.com/mcp"}},
+}
+
+
+def review_cases(positive=5, negative=3):
+    return {
+        "test_cases": {
+            "positive": [
+                {
+                    "description": "Case %d" % i,
+                    "prompt": "Check note %d" % i,
+                    "tools_triggered": "check_notes",
+                    "expected_behavior": "Returns note %d." % i,
+                }
+                for i in range(positive)
+            ],
+            "negative": [
+                {"description": "Off topic %d" % i, "prompt": "Weather %d?" % i}
+                for i in range(negative)
+            ],
+        }
+    }
+
+
+def add_mcp_plugin(root, mcp=None, review=None):
+    manifest = json.loads(json.dumps(VALID_PORTABLE))
+    if review is not None:
+        manifest["extensions"]["com.openai"]["review"] = review
+    root = add_portable_plugin(root, manifest)
+    write(Path(root) / "mcp.json", json.dumps(mcp or VALID_MCP, indent=2))
+    return root
+
+
 def build_valid_repo(root):
     root = Path(root)
     write(root / "README.md", VALID_README)
@@ -328,6 +414,115 @@ class CheckSkillTests(unittest.TestCase):
             )
             problems = self.run_root(root)
             self.assert_has_error(problems, "semver")
+
+    def test_valid_portable_plugin_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = add_portable_plugin(build_valid_repo(tmp))
+            problems = self.run_root(root)
+            errors = [p for p in problems if p.level == "error"]
+            self.assertEqual(errors, [], formatted(self.checker, problems))
+
+    def test_portable_version_must_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = json.loads(json.dumps(VALID_PORTABLE))
+            manifest["version"] = "1.1.0"
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "1.1.0")
+
+    def test_portable_unknown_top_level_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = json.loads(json.dumps(VALID_PORTABLE))
+            manifest["hooks"] = "./hooks.json"
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "'hooks' is not in the schema")
+
+    def test_portable_display_name_too_long(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = portable_with(displayName="A display name over thirty chars")
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "interface.displayName")
+
+    def test_portable_http_url_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = portable_with(supportURL="http://example.com/support")
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "HTTPS")
+
+    def test_portable_terms_url_required(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = json.loads(json.dumps(VALID_PORTABLE))
+            del manifest["extensions"]["com.openai"]["interface"]["termsOfServiceURL"]
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "interface.termsOfServiceURL is required")
+
+    def test_portable_too_many_prompts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = portable_with(defaultPrompt=["a", "b", "c", "d"])
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "defaultPrompt")
+
+    def test_portable_missing_icon(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = portable_with(logo="./assets/logo.png")
+            root = add_portable_plugin(build_valid_repo(tmp), manifest)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "./assets/logo.png not found")
+
+    def test_portable_icon_must_be_square(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = add_portable_plugin(build_valid_repo(tmp), icon=(64, 32))
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "64x32")
+
+    def test_mcp_plugin_with_review_cases_is_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = add_mcp_plugin(build_valid_repo(tmp), review=review_cases())
+            self.assertEqual(error_messages(self.run_root(root)), [])
+
+    def test_mcp_plugin_requires_review_cases(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = add_mcp_plugin(build_valid_repo(tmp))
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "review.test_cases is required")
+
+    def test_mcp_review_needs_exact_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = add_mcp_plugin(build_valid_repo(tmp), review=review_cases(4, 3))
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "positive has 4 cases; review needs exactly 5")
+
+    def test_mcp_review_positive_case_needs_tools(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            review = review_cases()
+            del review["test_cases"]["positive"][2]["tools_triggered"]
+            root = add_mcp_plugin(build_valid_repo(tmp), review=review)
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "positive[3] is missing tools_triggered")
+
+    def test_mcp_server_must_be_remote_https_without_headers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mcp = json.loads(json.dumps(VALID_MCP))
+            mcp["mcpServers"]["demo"].update(
+                url="http://example.com/mcp", headers={"Authorization": "x"}
+            )
+            root = add_mcp_plugin(build_valid_repo(tmp), mcp, review_cases())
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "url must be HTTPS")
+            self.assert_has_error(problems, "must not set headers")
+
+    def test_mcp_declares_exactly_one_server(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mcp = json.loads(json.dumps(VALID_MCP))
+            mcp["mcpServers"]["other"] = mcp["mcpServers"]["demo"]
+            root = add_mcp_plugin(build_valid_repo(tmp), mcp, review_cases())
+            problems = self.run_root(root)
+            self.assert_has_error(problems, "exactly one server")
 
     def test_place_files_missing_target(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -136,6 +136,19 @@ skills locally, clone the repo and link it, so edits take effect without reinsta
 omp plugin link ./BeautifulRust
 ```
 
+### OpenAI Codex
+
+Install it as a plugin:
+
+```bash
+codex plugin marketplace add morganlinton/BeautifulRust
+codex plugin add beautiful-rust@beautiful-rust
+```
+
+This installs all three skills as `beautiful-rust:rust-best-practices`,
+`beautiful-rust:rust-review`, and `beautiful-rust:rust-port`. The same package works in
+the ChatGPT desktop app.
+
 ### GitHub Copilot
 
 With GitHub CLI 2.90 or later:
@@ -157,7 +170,7 @@ gemini skills install https://github.com/morganlinton/BeautifulRust --path skill
 gemini skills install https://github.com/morganlinton/BeautifulRust --path skills/rust-port
 ```
 
-### OpenAI Codex, Cursor, or anything else: copy the folder
+### Cursor or anything else: copy the folder
 
 Clone the repo and copy the three skill folders into your agent's skills directory.
 Most agents now read the shared `.agents/skills/` location:
@@ -319,6 +332,7 @@ BeautifulRust/
 │   └── review-inventory.md    a real review report
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
+├── PRIVACY.md
 └── README.md
 ```
 
@@ -363,6 +377,12 @@ the new version with:
 
 ```bash
 omp plugin upgrade beautiful-rust
+```
+
+Codex users refresh the marketplace with:
+
+```bash
+codex plugin marketplace upgrade beautiful-rust
 ```
 
 Anyone who copied the folder or used an installer re-runs the install command. Record
